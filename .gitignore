@@ -31,3 +31,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+web-dist/
+web-build/*.tgz
+!web-build/package-lock.json

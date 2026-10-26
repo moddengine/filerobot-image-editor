@@ -1,0 +1,22 @@
+{
+  "name": "filerobot-web-build",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node smoke.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "playwright": "1.60.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-konva": "18.2.7",
+    "styled-components": "5.3.10",
+    "@babel/runtime": "7.28.4",
+    "@scaleflex/icons": "2.10.27",
+    "@scaleflex/ui": "2.10.27",
+    "konva": "9.3.6",
+    "prop-types": "15.7.2"
+  }
+}
