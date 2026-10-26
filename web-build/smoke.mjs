@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -7,7 +7,10 @@ import { createServer } from 'node:http';
 import { chromium } from 'playwright';
 
 const temp = mkdtempSync(join(tmpdir(), 'filerobot-packed-'));
-const tarball = readdirSync('.').find((name) => name.endsWith('.tgz'));
+const version = JSON.parse(
+  readFileSync('../web-dist/package.json', 'utf8'),
+).version;
+const tarball = `moddengine-filerobot-image-editor-web-${version}.tgz`;
 assert.ok(tarball, 'Pack the distribution before running the smoke test');
 execFileSync('tar', ['-xzf', tarball, '-C', temp]);
 const pkg = JSON.parse(
@@ -32,7 +35,7 @@ const server = createServer((req, res) => {
     res.end(readFileSync(join(temp, 'package/index.js')));
   } else {
     res.end(
-      '<!doctype html><html><body style="margin:0"><div id="editor" style="height:100vh"></div></body></html>',
+      '<!doctype html><html><body style="margin:0"><dialog id="dialog" style="position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;display:flex"><div id="editor" style="flex:1;min-height:0"></div><div id="SfxPopper"></div><div id="SfxPopup"></div></dialog></body></html>',
     );
   }
 });
@@ -45,6 +48,7 @@ try {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.evaluate(async () => {
+    document.querySelector('#dialog').showModal();
     const { default: Editor } = await import('/index.js');
     const image = document.createElement('canvas');
     image.width = 80;
@@ -60,6 +64,7 @@ try {
       defaultSavedImageName: 'test',
       defaultSavedImageType: 'png',
       savingPixelRatio: 1,
+      useBackendTranslations: false,
       Crop: { presetsItems: [{ titleKey: 'squareCrop', ratio: 1 }] },
       translations: { save: 'Save As', squareCrop: '1:1' },
       onBeforeSave: () => false,
@@ -74,9 +79,51 @@ try {
     window.editor.render();
   });
   await page.locator('canvas').first().waitFor();
+  await page.waitForFunction(() => {
+    try {
+      const { imageData } = window.editor.getCurrentImgData(
+        { name: 'original', extension: 'png' },
+        1,
+      );
+      return (
+        imageData.imageCanvas.width === 80 &&
+        imageData.imageCanvas.height === 60
+      );
+    } catch {
+      return false;
+    }
+  });
+  await page.locator('.FIE_crop-tool').click();
+  await page.getByText('1:1', { exact: true }).last().click();
+  await page.waitForFunction(() => {
+    const { imageData } = window.editor.getCurrentImgData(
+      { name: 'square', extension: 'png' },
+      1,
+    );
+    return imageData.width === imageData.height;
+  });
+  await page.locator('.FIE_crop-tool').click();
+  await page.getByText('Original', { exact: true }).last().click();
   await page.getByText('Finetune', { exact: true }).click();
   await page.getByText('Filters', { exact: true }).click();
   await page.getByText('Resize', { exact: true }).click();
+  await page.evaluate(() =>
+    window.editor.updateState({
+      adjustments: {
+        crop: {
+          ratio: 'original',
+          ratioTitleKey: 'original',
+          width: null,
+          height: null,
+          x: 0,
+          y: 0,
+        },
+        rotation: 0,
+        isFlippedX: false,
+        isFlippedY: false,
+      },
+    }),
+  );
   await page.evaluate(() =>
     window.editor.updateState({ resize: { width: 40, height: 30 } }),
   );
@@ -104,9 +151,17 @@ try {
       height: imageData.imageCanvas.height,
       alpha: imageData.imageCanvas.getContext('2d').getImageData(0, 0, 1, 1)
         .data[3],
+      color: Array.from(
+        imageData.imageCanvas.getContext('2d').getImageData(15, 15, 1, 1).data,
+      ),
     };
   });
-  assert.deepEqual(data, { width: 40, height: 30, alpha: 0 });
+  assert.deepEqual(data, {
+    width: 40,
+    height: 30,
+    alpha: 0,
+    color: [255, 0, 0, 255],
+  });
   await page.getByRole('button', { name: 'Save As', exact: true }).click();
   await page.waitForFunction(() => window.saved);
   assert.deepEqual(await page.evaluate(() => window.saved), {

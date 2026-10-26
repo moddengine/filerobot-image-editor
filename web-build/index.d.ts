@@ -23,6 +23,7 @@ export interface EditorConfig {
   savingPixelRatio?: number;
   previewPixelRatio?: number;
   closeAfterSave?: boolean;
+  useBackendTranslations?: boolean;
   showBackButton?: boolean;
   translations?: Record<string, string>;
   theme?: { typography?: { fontFamily?: string } };

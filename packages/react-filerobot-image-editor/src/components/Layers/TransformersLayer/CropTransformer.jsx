@@ -140,8 +140,10 @@ const CropTransformer = () => {
   useEffect(() => {
     if (shownImageDimensions) {
       shownImageDimensionsRef.current = shownImageDimensions;
+      // Ignore provisional canvas dimensions before the container is measured.
       if (
-        typeof shownImageDimensions.x !== 'undefined' &&
+        Number.isFinite(shownImageDimensions.x) &&
+        Number.isFinite(shownImageDimensions.y) &&
         shownImageDimensions.width
       ) {
         saveBoundedCropWithLatestConfig(

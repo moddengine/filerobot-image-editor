@@ -13,6 +13,10 @@ npx playwright install chromium
 npm test
 ```
 
-Tag a reviewed commit `moddengine-web-v4.9.0-cms.2` to build, test the packed
+Tag a reviewed commit `moddengine-web-v4.9.0-cms.3` to build, test the packed
 artifact, and publish the tarball as a GitHub release asset. Bump the version in
 build.mjs for subsequent releases. Dependencies are locked in package-lock.json.
+
+For native dialog hosts, place `SfxPopper` and `SfxPopup` portal targets inside
+the dialog so crop menus and popups remain in its accessible top layer. Set
+`useBackendTranslations: false` to use the bundled translations offline.
