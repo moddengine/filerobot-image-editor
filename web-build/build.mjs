@@ -96,7 +96,7 @@ writeFileSync(
   JSON.stringify(
     {
       name: '@moddengine/filerobot-image-editor-web',
-      version: '4.9.0-cms.1',
+      version: '4.9.0-cms.2',
       type: 'module',
       main: './index.js',
       types: './index.d.ts',
